@@ -63,6 +63,6 @@ jobs:
           exit 1
 
       - name: Build gem
-        run: gem build expecy-query.gemspec
+        run: gem build expect_query.gemspec
         
       - uses: rubygems/release-gem@1c162a739e8b4cb21a676e97b087e8268d8fc40b # v1
