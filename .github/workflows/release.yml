@@ -65,4 +65,13 @@ jobs:
       - name: Build gem
         run: gem build expect_query.gemspec
         
-      - uses: rubygems/release-gem@1c162a739e8b4cb21a676e97b087e8268d8fc40b # v1
+      - name: Publish gem to GitHub Packages
+        run: |
+          gem push expect_query-*.gem
+
+      - name: Add gem to github release
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} expect_query-*.gem
+        env:
+          GH_TOKEN: ${{ github.token }}
+          
