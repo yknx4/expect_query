@@ -4,8 +4,17 @@ on: pull_request_target
 jobs:
   automerge:
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.user.login, '[bot]')
+    if: contains(github.event.pull_request.user.login, '[bot]') && startsWith(github.event.pull_request.head.ref, 'dependabot')
     steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+          sparse-checkout: |
+            .github/env.tpl
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Load secret
         id: load_secrets
         uses: 1password/load-secrets-action@8d0d610af187e78a2772c2d18d627f4c52d3fbfb # v3
