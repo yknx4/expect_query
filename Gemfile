@@ -8,11 +8,13 @@ if (rails_version = ENV["RAILS_VERSION"])
     gem "rails", github: "rails/rails", branch: "main"
     gem "activerecord", github: "rails/rails", branch: "main"
     gem "activesupport", github: "rails/rails", branch: "main"
+    gem "railties", github: "rails/rails", branch: "main"
   else
     gem "rails", "~> #{rails_version}"
     gem "activerecord", "~> #{rails_version}"
     gem "activesupport", "~> #{rails_version}"
+    gem "railties", ">= 8.0"
   end
+else
+  gem "railties", ">= 8.0"
 end
-
-gem "railties", ">= 8.0" # For testing railties integration if needed
