@@ -21,15 +21,26 @@ jobs:
     env:
       VERSION_FILE: "lib/expect_query/version.rb"
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Checkout main
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Load secret
+        id: load_secrets
+        uses: 1password/load-secrets-action@v3
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.SA_TOKEN_1P }}
+          OP_ENV_FILE: ".github/env.tpl"
+
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ steps.load_secrets.outputs.APP_ID }}
+          private-key: ${{ steps.load_secrets.outputs.APP_PRIVATE_KEY }}
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
@@ -89,7 +100,7 @@ jobs:
         id: create-pr
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
         with:
-          token: ${{ github.token }}
+          token: ${{ steps.app-token.outputs.token }}
           add-paths: |
             Gemfile.lock
             ${{ env.VERSION_FILE }}
@@ -110,5 +121,5 @@ jobs:
         run: |
           gh pr merge --merge --auto $PR_NUMBER
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}

@@ -3,16 +3,26 @@ on: pull_request_target
 
 jobs:
   automerge:
-    permissions:
-      contents: write
-      pull-requests: write
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: contains(github.event.pull_request.user.login, '[bot]')
     steps:
+      - name: Load secret
+        id: load_secrets
+        uses: 1password/load-secrets-action@v3
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.SA_TOKEN_1P }}
+          OP_ENV_FILE: ".github/env.tpl"
+
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ steps.load_secrets.outputs.APP_ID }}
+          private-key: ${{ steps.load_secrets.outputs.APP_PRIVATE_KEY }}
+          
       - name: Enable automerge
         continue-on-error: true
         run: |
           gh pr merge --merge --auto $PR_NUMBER
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
