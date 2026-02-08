@@ -1,0 +1,33 @@
+name: Minitest
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: ['3.4', 'head']
+        rails-version: ['8.0', '8.1', 'main']
+    
+    env:
+      RAILS_VERSION: ${{ matrix.rails-version }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    
+    - name: Run Minitest
+      continue-on-error: ${{ matrix.rails-version == 'main' }}
+      run: |
+        bundle exec ruby test/expecy_query_test.rb
+        bundle exec ruby test/multi_store_test.rb
