@@ -22,6 +22,8 @@ on:
 
 jobs:
   bump:
+    env:
+      VERSION_FILE: "lib/expect_query/version.rb"
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -55,7 +57,6 @@ jobs:
       - name: Bump version
         id: bump
         run: |
-          VERSION_FILE="lib/rmi/engine/version.rb"
           CURRENT=$(grep -oP 'VERSION = "\K[^"]+' "$VERSION_FILE")
 
           BUMP_TYPE="${{ steps.bump-type.outputs.type }}"
@@ -98,7 +99,7 @@ jobs:
           token: ${{ github.token }}
           add-paths: |
             Gemfile.lock
-            lib/rmi/engine/version.rb
+            ${{ env.VERSION_FILE }}
           branch: "release/bump-${{ steps.bump.outputs.new }}"
           commit-message: "chore: bump version ${{ steps.bump.outputs.current }} -> ${{ steps.bump.outputs.new }}"
           base: main
