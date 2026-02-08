@@ -29,5 +29,5 @@ jobs:
     - name: Run Minitest
       continue-on-error: ${{ matrix.rails-version == 'main' }}
       run: |
-        bundle exec ruby test/expecy_query_test.rb
+        bundle exec ruby test/expect_query_test.rb
         bundle exec ruby test/multi_store_test.rb
