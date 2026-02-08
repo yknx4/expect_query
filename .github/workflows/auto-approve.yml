@@ -1,0 +1,38 @@
+name: Auto-approve PRs
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'yknx4'
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+          sparse-checkout: |
+            .github/env.tpl
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Load secret
+        id: load_secrets
+        uses: 1password/load-secrets-action@8d0d610af187e78a2772c2d18d627f4c52d3fbfb # v3
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.SA_TOKEN_1P }}
+          OP_ENV_FILE: ".github/env.tpl"
+
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2
+        id: app-token
+        with:
+          app-id: ${{ steps.load_secrets.outputs.APP_ID }}
+          private-key: ${{ steps.load_secrets.outputs.APP_PRIVATE_KEY }}
+
+      - name: Approve PR
+        run: |
+          gh pr review --approve "$PR_NUMBER"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}

@@ -42,7 +42,7 @@ jobs:
           app-id: ${{ steps.load_secrets.outputs.APP_ID }}
           private-key: ${{ steps.load_secrets.outputs.APP_PRIVATE_KEY }}
 
-      - uses: crazy-max/ghaction-import-gpg@v6
+      - uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         with:
           gpg_private_key: ${{ steps.load_secrets.outputs.GPG_KEY }}
           passphrase: ${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}
