@@ -62,6 +62,8 @@ jobs:
           echo "::error:: Version mismatch! Release tag is '${{ steps.verify.outputs.tag_version }}' but code VERSION is '${{ steps.verify.outputs.code_version }}'. Gem not published. Triggered bump-version workflow to set version to ${{ steps.verify.outputs.next_patch }}."
           exit 1
 
+      - uses: rubygems/configure-rubygems-credentials@31a1b8b3f3e2e6ed22769fe272dae83e92b3c754
+
       - name: Build gem
         run: gem build expect_query.gemspec
         
