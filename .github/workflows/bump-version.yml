@@ -39,7 +39,6 @@ jobs:
         uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
         with:
           bundler-cache: true
-          cache-version: publish-v1
 
       - name: Determine bump type
         id: bump-type
@@ -94,7 +93,7 @@ jobs:
 
       - name: Create pull request
         id: create-pr
-        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c # v6
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
         with:
           token: ${{ github.token }}
           add-paths: |
