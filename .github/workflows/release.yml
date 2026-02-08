@@ -11,8 +11,9 @@ permissions:
 
 jobs:
   publish:
+    env:
+      VERSION_FILE: "lib/expect_query/version.rb"
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -25,7 +26,6 @@ jobs:
       - name: Verify version matches release tag
         id: verify
         run: |
-          VERSION_FILE="lib/rmi/engine/version.rb"
           CODE_VERSION=$(grep -oP 'VERSION = "\K[^"]+' "$VERSION_FILE")
 
           # Strip leading 'v' from the release tag (e.g. v1.0.0 -> 1.0.0)
