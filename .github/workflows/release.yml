@@ -1,0 +1,68 @@
+name: Publish Gem
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  actions: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
+        with:
+          bundler-cache: true
+
+      - name: Verify version matches release tag
+        id: verify
+        run: |
+          VERSION_FILE="lib/rmi/engine/version.rb"
+          CODE_VERSION=$(grep -oP 'VERSION = "\K[^"]+' "$VERSION_FILE")
+
+          # Strip leading 'v' from the release tag (e.g. v1.0.0 -> 1.0.0)
+          TAG_VERSION="${{ github.event.release.tag_name }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+
+          echo "code_version=$CODE_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CODE_VERSION" = "$TAG_VERSION" ]; then
+            echo "match=true" >> $GITHUB_OUTPUT
+          else
+            # Compute the next patch version from the tag so we can recover.
+            # e.g. tag 0.9.0 -> next patch is 0.9.1
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG_VERSION"
+            NEXT_PATCH="${MAJOR}.${MINOR}.$((PATCH + 1))"
+            echo "match=false" >> $GITHUB_OUTPUT
+            echo "next_patch=$NEXT_PATCH" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger version bump on mismatch
+        if: steps.verify.outputs.match == 'false'
+        run: |
+          gh workflow run bump-version.yml \
+            --ref main \
+            --field version_type=minor \
+            --field exact_version="${{ steps.verify.outputs.next_patch }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Fail if version mismatch
+        if: steps.verify.outputs.match == 'false'
+        run: |
+          echo "::error:: Version mismatch! Release tag is '${{ steps.verify.outputs.tag_version }}' but code VERSION is '${{ steps.verify.outputs.code_version }}'. Gem not published. Triggered bump-version workflow to set version to ${{ steps.verify.outputs.next_patch }}."
+          exit 1
+
+      - name: Build gem
+        run: gem build expecy-query.gemspec
+        
+      - uses: rubygems/release-gem@1c162a739e8b4cb21a676e97b087e8268d8fc40b # v1
