@@ -69,6 +69,15 @@ jobs:
         run: |
           gem push expect_query-*.gem
 
+      - name: Bump version
+        if: steps.verify.outputs.match == 'true' && always()
+        run: |
+          gh workflow run bump-version.yml \
+            --ref main \
+            --field version_type=patch
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Add gem to github release
         run: |
           gh release upload ${{ github.event.release.tag_name }} expect_query-*.gem
