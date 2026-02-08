@@ -25,22 +25,22 @@ module ExpectQuery
         true
       end
 
-      def matches?(block)
-        @counter = ExpectQuery::SqlCounter.new(matching: @matching)
-        ActiveSupport::Notifications.subscribed(@counter, "sql.active_record") do
-          block.call
-        end
-        
-        @actual = @counter.count
-        
-        if @at_most
-          @actual <= @at_most
-        elsif @expected
-          @actual == @expected
-        else
-          @actual > 0 # generic "makes queries"
-        end
+    def matches?(block)
+      @counter = ExpectQuery::SqlCounter.new(matching: @matching)
+      ActiveSupport::Notifications.subscribed(@counter, "sql.active_record") do
+        block.call
       end
+      
+      @actual = @counter.count
+      
+      if @at_most
+        @actual <= @at_most
+      elsif @expected
+        @actual == @expected
+      else
+        @actual > 0 # generic "makes queries"
+      end
+    end
 
       def failure_message
         msg = "expected to make "
@@ -86,12 +86,6 @@ module ExpectQuery
           store_ids << store.object_id
         end
 
-        # If no stores are defined (e.g. no Rails.cache and no store passed), we can't strict filter by ID.
-        # But we probably should pass empty array if we intended to track but found nothing? 
-        # Or if store_ids is empty, maybe we track ALL?
-        # User said: "By default use Rails.cache". If Rails.cache is missing, maybe we should warn or track nothing?
-        # Let's pass nil if we want to track ALL, but if we defaulted to Rails.cache and it's there, we pass it.
-        # If user explicitly passed empty list?
         pass_ids = store_ids.empty? ? nil : store_ids
 
         @counter = ExpectQuery::CacheCounter.new(matching: @matching, store_ids: pass_ids)
