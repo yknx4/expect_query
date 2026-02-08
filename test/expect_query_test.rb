@@ -47,4 +47,20 @@ class ExpectQueryTest < Minitest::Test
       Rails.cache.write("bar", 1)
     end
   end
+
+  def test_assert_io_operations
+    assert_io_operations(sql: { count: 1 }, cache: { write: 1 }) do
+      User.create(name: "IO")
+      Rails.cache.write("io", 1)
+    end
+  end
+
+  def test_assert_io_operations_failure
+    assert_raises(Minitest::Assertion) do
+      assert_io_operations(sql: { count: 10 }, cache: { write: 1 }) do
+        User.create(name: "IO")
+        Rails.cache.write("io", 1)
+      end
+    end
+  end
 end
