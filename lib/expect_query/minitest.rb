@@ -66,6 +66,36 @@ module ExpectQuery
         assert_equal expected, actual, "Expected #{expected} #{op} cache operations, but got #{actual}#{debug_info}"
       end
     end
+
+    def assert_io_operations(sql: nil, cache: nil, &block)
+      if sql
+        sql_args = sql.dup
+        count = sql_args.delete(:count)
+        matching = sql_args.delete(:matching)
+        at_most = sql_args.delete(:at_most)
+        
+        # If unknown keys remain in sql_args, we could warn, but for now we verify strictness if possible?
+        # assert_sql_queries doesn't take **options, so we can't pass them.
+        
+        inner_block = if cache
+          proc { assert_io_operations(cache: cache, &block) }
+        else
+          block
+        end
+        
+        assert_sql_queries(count, matching: matching, at_most: at_most, &inner_block)
+      elsif cache
+        cache_args = cache.dup
+        count = cache_args.delete(:count)
+        matching = cache_args.delete(:matching)
+        store = cache_args.delete(:store)
+        stores = cache_args.delete(:stores)
+        
+        assert_cache_operations(count, matching: matching, store: store, stores: stores, **cache_args, &block)
+      else
+        block.call
+      end
+    end
   end
 end
 
