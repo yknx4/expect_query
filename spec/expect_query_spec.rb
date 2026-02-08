@@ -69,4 +69,12 @@ RSpec.describe "ExpectQuery RSpec Matchers" do
       }.to perform_cache_operations(read: 1, matching: /user/)
     end
   end
+  describe "chaining matchers" do
+    it "matches both sql and cache operations" do
+      expect {
+        User.create(name: "Chained")
+        Rails.cache.write("chained_key", "value")
+      }.to make_sql_queries(1).and perform_cache_operations(write: 1)
+    end
+  end
 end
