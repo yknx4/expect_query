@@ -44,10 +44,14 @@ jobs:
 
       - name: Retrieve the secret and decode it to a file to output
         id: gpg-key
+        env:
+          BASE64_GPG_KEY: ${{ steps.load_secrets.outputs.GPG_KEY }}
         run: |
+          echo "::add-mask::$BASE64_GPG_KEY"
+          echo "::add-mask::$(echo "$BASE64_GPG_KEY" | base64 --decode | sed ':a;N;$!ba;s/%/%25/g' | sed ':a;N;$!ba;s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')"
           {
             echo "gpg_key<<EOF"
-            echo "${{ steps.load_secrets.outputs.GPG_KEY }}" | base64 --decode
+            echo "$BASE64_GPG_KEY" | base64 --decode
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -134,6 +138,7 @@ jobs:
       - name: Enable automerge
         continue-on-error: true
         run: |
+          echo "::add-mask::$GH_TOKEN"
           gh pr merge --merge --auto $PR_NUMBER
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
