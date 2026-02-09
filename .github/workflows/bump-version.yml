@@ -59,7 +59,7 @@ jobs:
       - uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         with:
           gpg_private_key: ${{ steps.gpg-key.outputs.gpg_key }}
-          passphrase: ${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}
+          passphrase: ${{ steps.load_secrets.outputs.GPG_PASSKEY }}
           git_user_signingkey: true
           git_commit_gpgsign: true
           git_config_global: true
@@ -68,8 +68,8 @@ jobs:
       
       - name: DEBUG
         run: |
-          echo "::add-mask::${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}"
-          echo "${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}" | wc -c
+          echo "::add-mask::${{ steps.load_secrets.outputs.GPG_PASSKEY }}"
+          echo "${{ steps.load_secrets.outputs.GPG_PASSKEY }}" | wc -c
           touch /tmp/foo
           gpg --clearsign /tmp/foo
           # print passphrase length
