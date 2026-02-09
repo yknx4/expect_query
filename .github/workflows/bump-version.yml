@@ -58,10 +58,13 @@ jobs:
       - uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         with:
           gpg_private_key: ${{ steps.gpg-key.outputs.gpg_key }}
-          passphrase: ${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}
+          passphrase: ${{ steps.load_secrets.outputs.GPG_PASSKEY }}
           git_user_signingkey: true
           git_commit_gpgsign: true
-
+          git_config_global: true
+          git_tag_gpgsign: true
+          git_push_gpgsign: "true"
+  
       - name: Set up Ruby
         uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
         with:
