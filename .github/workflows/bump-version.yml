@@ -42,9 +42,18 @@ jobs:
           app-id: ${{ steps.load_secrets.outputs.APP_ID }}
           private-key: ${{ steps.load_secrets.outputs.APP_PRIVATE_KEY }}
 
+      - name: Retrieve the secret and decode it to a file to output
+        id: gpg-key
+        run: |
+          {
+            echo "gpg_key<<EOF"
+            echo "${{ steps.load_secrets.outputs.GPG_KEY }}" | base64 --decode
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         with:
-          gpg_private_key: ${{ steps.load_secrets.outputs.GPG_KEY }}
+          gpg_private_key: ${{ steps.gpg-key.outputs.gpg_key }}
           passphrase: ${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}
           git_user_signingkey: true
           git_commit_gpgsign: true
