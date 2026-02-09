@@ -1,20 +1,21 @@
 name: Bump Version
 
 on:
-  workflow_dispatch:
-    inputs:
-      version_type:
-        description: "Version bump type (ignored if exact_version is set)"
-        type: choice
-        options:
-          - minor
-          - major
-          - patch
-        required: true
-      exact_version:
-        description: "Exact version to set (e.g. 1.2.3). Takes precedence over version_type."
-        type: string
-        required: false
+  pull_request:
+  # workflow_dispatch:
+  #   inputs:
+  #     version_type:
+  #       description: "Version bump type (ignored if exact_version is set)"
+  #       type: choice
+  #       options:
+  #         - minor
+  #         - major
+  #         - patch
+  #       required: true
+  #     exact_version:
+  #       description: "Exact version to set (e.g. 1.2.3). Takes precedence over version_type."
+  #       type: string
+  #       required: false
 
 jobs:
   bump:
@@ -61,85 +62,97 @@ jobs:
           passphrase: ${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}
           git_user_signingkey: true
           git_commit_gpgsign: true
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
-        with:
-          bundler-cache: true
-
-      - name: Determine bump type
-        id: bump-type
+          git_config_global: true
+          git_tag_gpgsign: true
+          git_push_gpgsign: "true"
+      
+      - name: DEBUG
         run: |
-          EXACT="${{ github.event.inputs.exact_version }}"
-          if [ -n "$EXACT" ]; then
-            echo "type=exact" >> $GITHUB_OUTPUT
-            echo "exact=$EXACT" >> $GITHUB_OUTPUT
-          else
-            echo "type=${{ github.event.inputs.version_type }}" >> $GITHUB_OUTPUT
-          fi
+          echo "::add-mask::${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}"
+          echo "${{ steps.load_secrets.outputs.GPG_PASSPHRASE }}" | wc -c
+          touch /tmp/foo
+          gpg --clearsign /tmp/foo
+          # print passphrase length
 
-      - name: Bump version
-        id: bump
-        run: |
-          CURRENT=$(grep -oP 'VERSION = "\K[^"]+' "$VERSION_FILE")
 
-          BUMP_TYPE="${{ steps.bump-type.outputs.type }}"
+      # - name: Set up Ruby
+      #   uses: ruby/setup-ruby@09a7688d3b55cf0e976497ff046b70949eeaccfd # v1
+      #   with:
+      #     bundler-cache: true
 
-          if [ "$BUMP_TYPE" = "exact" ]; then
-            NEW_VERSION="${{ steps.bump-type.outputs.exact }}"
-          else
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+      # - name: Determine bump type
+      #   id: bump-type
+      #   run: |
+      #     EXACT="${{ github.event.inputs.exact_version }}"
+      #     if [ -n "$EXACT" ]; then
+      #       echo "type=exact" >> $GITHUB_OUTPUT
+      #       echo "exact=$EXACT" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "type=${{ github.event.inputs.version_type }}" >> $GITHUB_OUTPUT
+      #     fi
 
-            case "$BUMP_TYPE" in
-              patch)
-                PATCH=$((PATCH + 1))
-                ;;
-              minor)
-                MINOR=$((MINOR + 1))
-                PATCH=0
-                ;;
-              major)
-                MAJOR=$((MAJOR + 1))
-                MINOR=0
-                PATCH=0
-                ;;
-            esac
+      # - name: Bump version
+      #   id: bump
+      #   run: |
+      #     CURRENT=$(grep -oP 'VERSION = "\K[^"]+' "$VERSION_FILE")
 
-            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          fi
+      #     BUMP_TYPE="${{ steps.bump-type.outputs.type }}"
 
-          sed -i "s/VERSION = \"${CURRENT}\"/VERSION = \"${NEW_VERSION}\"/" "$VERSION_FILE"
+      #     if [ "$BUMP_TYPE" = "exact" ]; then
+      #       NEW_VERSION="${{ steps.bump-type.outputs.exact }}"
+      #     else
+      #       IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
 
-          echo "current=$CURRENT" >> $GITHUB_OUTPUT
-          echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "type=$BUMP_TYPE" >> $GITHUB_OUTPUT
-          bundle config set frozen false
-          bundle install
+      #       case "$BUMP_TYPE" in
+      #         patch)
+      #           PATCH=$((PATCH + 1))
+      #           ;;
+      #         minor)
+      #           MINOR=$((MINOR + 1))
+      #           PATCH=0
+      #           ;;
+      #         major)
+      #           MAJOR=$((MAJOR + 1))
+      #           MINOR=0
+      #           PATCH=0
+      #           ;;
+      #       esac
 
-      - name: Create pull request
-        id: create-pr
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          add-paths: |
-            Gemfile.lock
-            ${{ env.VERSION_FILE }}
-          branch: "release/bump-${{ steps.bump.outputs.new }}"
-          commit-message: "chore: bump version ${{ steps.bump.outputs.current }} -> ${{ steps.bump.outputs.new }}"
-          base: main
-          title: "chore: bump version ${{ steps.bump.outputs.current }} -> ${{ steps.bump.outputs.new }}"
-          body: |
-            Bumps version from `${{ steps.bump.outputs.current }}` to `${{ steps.bump.outputs.new }}` (${{ steps.bump.outputs.type }} bump).
+      #       NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+      #     fi
 
-            This PR was auto-generated by the [Bump Version](/.github/workflows/bump-version.yml) workflow.
-          labels: "automerge"
-          committer: "${{ vars.CI_USER_NAME }} <${{ vars.CI_USER_EMAIL }}>"
+      #     sed -i "s/VERSION = \"${CURRENT}\"/VERSION = \"${NEW_VERSION}\"/" "$VERSION_FILE"
 
-      - name: Enable automerge
-        continue-on-error: true
-        run: |
-          echo "::add-mask::$GH_TOKEN"
-          gh pr merge --merge --auto $PR_NUMBER
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
+      #     echo "current=$CURRENT" >> $GITHUB_OUTPUT
+      #     echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+      #     echo "type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+      #     bundle config set frozen false
+      #     bundle install
+
+      # - name: Create pull request
+      #   id: create-pr
+      #   uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+      #   with:
+      #     token: ${{ steps.app-token.outputs.token }}
+      #     add-paths: |
+      #       Gemfile.lock
+      #       ${{ env.VERSION_FILE }}
+      #     branch: "release/bump-${{ steps.bump.outputs.new }}"
+      #     commit-message: "chore: bump version ${{ steps.bump.outputs.current }} -> ${{ steps.bump.outputs.new }}"
+      #     base: main
+      #     title: "chore: bump version ${{ steps.bump.outputs.current }} -> ${{ steps.bump.outputs.new }}"
+      #     body: |
+      #       Bumps version from `${{ steps.bump.outputs.current }}` to `${{ steps.bump.outputs.new }}` (${{ steps.bump.outputs.type }} bump).
+
+      #       This PR was auto-generated by the [Bump Version](/.github/workflows/bump-version.yml) workflow.
+      #     labels: "automerge"
+      #     committer: "${{ vars.CI_USER_NAME }} <${{ vars.CI_USER_EMAIL }}>"
+
+      # - name: Enable automerge
+      #   continue-on-error: true
+      #   run: |
+      #     echo "::add-mask::$GH_TOKEN"
+      #     gh pr merge --merge --auto $PR_NUMBER
+      #   env:
+      #     GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      #     PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
